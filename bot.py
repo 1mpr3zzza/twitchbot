@@ -1,7 +1,9 @@
-from twitchio.ext import commands
+import os
+import random
 import json
+from twitchio.ext import commands
 
-# Загружаем кастомные команды из файла
+# Загружаем статичные команды из файла
 def load_commands():
     try:
         with open("commands.json", "r", encoding="utf-8") as f:
@@ -12,19 +14,23 @@ def load_commands():
 custom_commands = load_commands()
 
 bot = commands.Bot(
-    token='oauth:ТВОЙ_ТОКЕН',
+    token=os.getenv('TOKEN'),
     prefix='!',
-    initial_channels=['ТВОЙ_КАНАЛ']
+    initial_channels=[os.getenv('CHANNEL')]
 )
+
+chat_users = set()
 
 @bot.event
 async def event_ready():
-    print(f'Бот запущен как | {bot.nick}')
+    print(f'Бот подключен как {bot.nick}')
 
 @bot.event
 async def event_message(message):
     if message.echo:
         return
+
+    chat_users.add(message.author.name)
 
     msg = message.content.strip()
     if msg.startswith("!"):
@@ -33,5 +39,14 @@ async def event_message(message):
             await message.channel.send(custom_commands[cmd])
 
     await bot.handle_commands(message)
+
+@bot.command(name='сосал')
+async def сосал(ctx):
+    candidates = list(chat_users - {ctx.author.name})
+    if not candidates:
+        await ctx.send(f"{ctx.author.name} сосал сам себя 😔")
+    else:
+        victim = random.choice(candidates)
+        await ctx.send(f"{ctx.author.name} сосал {victim}")
 
 bot.run()
